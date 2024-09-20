@@ -35,11 +35,6 @@ jobs:
     - name: Correr pruebas
       id: correr-pruebas
       run: python -m unittest -v
-    - name: Cálculo de cubrimiento
-      id: cubrimiento
-      run: |
-          coverage run -m unittest
-          coverage report -m
   job2:
     name: Creación release
     runs-on: ubuntu-latest
