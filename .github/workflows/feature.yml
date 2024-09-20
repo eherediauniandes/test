@@ -1,0 +1,53 @@
+name: Feature
+on:
+  push:
+    branches: 
+      - 'feature**' 
+jobs:
+  job1:
+    name: Pruebas
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout de repositorio
+      uses: actions/checkout@v2
+    - name: Configuración de entorno de python
+      uses: actions/setup-python@v2
+      with:
+          python-version: '3.7'
+    - name: Instalación de librerías y dependencias
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Correr pruebas
+      id: correr-pruebas
+      run: python -m unittest -v
+    - name: Cálculo de cubrimiento
+      id: cubrimiento
+      run: |
+          coverage run -m unittest
+          coverage report -m
+  job2:
+    name: Mezclar cambios
+    needs: job1
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Omit config
+      run: |
+        git config --global user.email "e.herediar@uniandes.edu.co"
+        git config --global user.name "Esteban Heredia"
+    - name: Checkout develop branch
+      run: |
+        git checkout develop
+    - name: Merge feature branch
+      run: |
+        git merge ${{ github.ref }}
+    - name: Push changes
+      run: |
+        git push -f -u origin develop
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
