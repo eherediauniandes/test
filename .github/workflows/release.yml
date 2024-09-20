@@ -1,0 +1,65 @@
+name: Release
+on:
+  workflow_run:
+    workflows: [Feature]
+    types:
+      - completed
+  # pull_request:
+  #   types:
+  #     - labeled
+  #     - unlabeled
+  #     - synchronize
+  #     - opened
+  #     - edited
+  #     - ready_for_review
+  #     - reopened
+  #     - unlocked
+  #   branches: [ develop ]
+  # push:
+  #   branches: [ develop ]
+jobs:
+  job1:
+    name: Pruebas
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout de repositorio
+      uses: actions/checkout@v2
+    - name: Configuración de entorno de python
+      uses: actions/setup-python@v2
+      with:
+          python-version: '3.7'
+    - name: Instalación de librerías y dependencias
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Correr pruebas
+      id: correr-pruebas
+      run: python -m unittest -v
+    - name: Cálculo de cubrimiento
+      id: cubrimiento
+      run: |
+          coverage run -m unittest
+          coverage report -m
+  job2:
+    name: Creación release
+    runs-on: ubuntu-latest
+    needs: job1
+    steps:
+    - name: Checkout de repositorio
+      uses: actions/checkout@v4
+    - name: Traer siguiente versión
+      uses: reecetech/version-increment@2024.4.3
+      id: version
+      with:
+        scheme: semver
+        increment: minor
+    - name: Crear rama
+      run: |
+        git checkout -b "release/${{ steps.version.outputs.version }}"
+        git push -f -u origin "release/${{ steps.version.outputs.version }}"
+    - name: Mezcla release hacia main
+      uses: tukasz/direct-merge-action@master
+      with:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        source-branch: "release/${{ steps.version.outputs.version }}"
+        target-branch: main
